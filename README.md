@@ -51,7 +51,7 @@ at a different bucket size if you fork it.
 ## Installation
 
 ```bash
-git clone https://github.com/<your-username>/people-traffic-heatmap.git
+git clone https://github.com/parsa-mjls/people-traffic-heatmap.git
 cd people-traffic-heatmap
 pip install -r requirements.txt
 ```

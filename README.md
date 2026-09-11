@@ -1,131 +1,114 @@
-# People_Traffic_Heatmap
-# People-Traffic Heatmap (Detection + Time-Bucketed Analytics)
+# People-Traffic Heatmap
 
-A computer-vision tool that watches a video feed (local file or RTSP camera),
-detects people with YOLO, and turns their foot traffic into a browsable
-heatmap. Pick any date and 15-minute time window in the desktop app and see
-where people spent the most time in that window, rendered over the actual
-scene.
+**See where people actually walk — not just how many pass by.**
 
-> This is a standalone portfolio rebuild of a system I originally built for
-> production use. It has been simplified and re-architected from scratch for
-> public release — it contains no proprietary code, data, or business logic.
+A desktop tool that watches a video (a recorded clip or a live camera) and
+turns foot traffic into a heatmap: pick any date and time window, and see
+exactly where people spent the most time in that window, drawn right on top
+of the real scene.
 
-## Features
+<p align="center">
+  <img src="docs/screenshots/live-view.png" alt="Live detection view" width="800"/>
+  <br/>
+  <em>Live view — people are detected as they move through frame.</em>
+</p>
 
-- **Person detection** on video files or live RTSP streams, via a
-  YOLO (Ultralytics) model.
-- **Spatial + temporal accumulation**: every detection is binned into a grid
-  cell (configurable resolution, default 128×72) and a 15-minute time bucket,
-  stored per calendar day.
-- **Any time-range query**: aggregate any contiguous set of 15-minute buckets
-  into a single heatmap — last 15 minutes, a whole shift, a full day.
-- **Desktop GUI** (PyQt5, dark/neon theme):
-  - Live video panel with detection boxes + running heatmap overlay.
-  - A draggable 24-hour timeline for picking the time range to visualize,
-    shaded by how much traffic was recorded in each bucket.
-  - One-click PNG export of the generated heatmap.
-- **RTSP-resilient**: automatically reconnects on stream drops.
-- **Multi-camera ready**: an optional camera ID keeps each source's data in
-  its own folder.
+---
 
-## How it works
+## 🎥 Demo
 
-The whole pipeline is intentionally kept in two files:
+<p align="center">
+  <img src="docs/demo.gif" alt="App walkthrough demo" width="800"/>
+</p>
 
-| File | Responsibility |
-|---|---|
-| `heatmap_engine.py` | Config, video capture + YOLO inference, the day/grid/time-bucket data store (`.npy` cubes on disk), and image rendering (normalize → resize → blur → colormap → blend). Framework-agnostic, no GUI dependency. |
-| `gui_app.py` | PyQt5 desktop app: source panel, the custom timeline widget, and a background `QThread` that runs the live processing loop without freezing the UI. |
+*(Short screen recording of the full flow: loading a video, watching it
+process live, then generating and saving a heatmap for a chosen time
+window.)*
 
-Detection points are stored as counts in a 3D array per day:
-`(96 time-buckets, grid_height, grid_width)`. Querying a time range is just
-summing a slice of that array along the time axis, then colorizing the
-result — which is why both the live overlay and the historical query use the
-exact same rendering code path.
+▶️ Full-length video: **[link to be added]**
 
-The time resolution is fixed at **15 minutes** in this build to keep the data
-format simple and predictable for a demo; the engine itself is easy to point
-at a different bucket size if you fork it.
+---
 
-## Installation
+## What it does
 
-```bash
-git clone https://github.com/parsa-mjls/people-traffic-heatmap.git
-cd people-traffic-heatmap
-pip install -r requirements.txt
-```
+- Watches a **video file or a live RTSP camera** and detects people frame by frame.
+- Remembers *when and where* every person was seen, broken down into
+  15-minute time windows across the day.
+- Lets you **scrub through any time range** on a timeline and instantly
+  generate a heatmap for just that window — the last 15 minutes, a whole
+  shift, a full day, whatever you need.
+- Keeps recordings from **different cameras or videos separate**, so you can
+  switch between sources and compare them.
+- **Saves the result as an image** with one click.
 
-YOLO weights (e.g. `yolov8n.pt`) are downloaded automatically by
-`ultralytics` on first run. A CUDA-capable GPU is used automatically if
-available; otherwise it falls back to CPU.
+## ✨ Features
 
-## Usage
+- **Live processing view** — watch detections happen in real time, with a
+  running heatmap overlay on the video itself.
+- **Interactive timeline** — a full 24-hour bar you can drag across to pick
+  a time window, resize it from either edge, or drag the whole selection
+  around. It's shaded by how much traffic was recorded in each slice, so
+  busy periods are visible at a glance.
+- **Multi-source support** — every camera or test video gets its own named
+  folder, and a dropdown lets you jump between them when reviewing data.
+- **RTSP-resilient** — automatically reconnects if a live camera stream drops.
+- **One-click export** — save any generated heatmap as a PNG.
+- **Dark, neon-themed interface** designed for a monitoring/analytics feel.
 
-### Desktop app (recommended)
+## 📸 Screenshots
 
-```bash
-python gui_app.py
-```
+<table>
+  <tr>
+    <td align="center">
+      <img src="docs/screenshots/source-panel.png" width="380"/><br/>
+      <sub>Choosing a video / camera source</sub>
+    </td>
+    <td align="center">
+      <img src="docs/screenshots/timeline-select.png" width="380"/><br/>
+      <sub>Dragging a time window on the timeline</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/screenshots/heatmap-output.png" width="380"/><br/>
+      <sub>Generated heatmap for the selected window</sub>
+    </td>
+    <td align="center">
+      <img src="docs/screenshots/multi-source.png" width="380"/><br/>
+      <sub>Switching between multiple recorded sources</sub>
+    </td>
+  </tr>
+</table>
 
-1. **Source panel** — choose a video file (Browse…) or paste an RTSP URL,
-   set the frame size to match your source, then **Start Live Processing**.
-   The left panel shows the live feed with detections and a running heatmap
-   overlay; data is saved to disk periodically and on Stop.
-2. **Timeline panel** — pick a date, click **Load Day** to shade the
-   24-hour timeline by recorded traffic, drag across the buckets you want,
-   then **Generate Heatmap**. Use **Save Image** to export the result as a
-   PNG.
+*(Screenshots to be added — drop your own images into `docs/screenshots/`
+using the file names above and they'll show up here.)*
 
-### Headless quick test
+## 🚀 How it's used
 
-```bash
-python heatmap_engine.py path/to/video.mp4
-```
+1. **Pick a source.** Choose a video file or paste an RTSP camera URL.
+2. **Start processing.** People are detected live, with their positions
+   quietly logged in the background.
+3. **Pick a source and a date** from the timeline panel — every recorded
+   video/camera shows up in its own entry.
+4. **Drag across the timeline** to choose the time window you care about.
+   The bar lights up based on how busy each moment was.
+5. **Generate the heatmap** — it's rendered right over the actual scene.
+6. **Save it** as an image, done.
 
-Runs the detection + accumulation loop in a plain OpenCV window (press `q`
-to stop) — useful for a quick sanity check without launching the GUI.
+## 🧠 Under the hood (short version)
 
-## Configuration
+Built with Python — OpenCV for video I/O, a YOLO-based detector for finding
+people, and a PyQt5 desktop interface for the app itself. The detection and
+storage pipeline is original work; the exact approach is intentionally not
+detailed here.
 
-All tunables live in the `Config` dataclass at the top of
-`heatmap_engine.py`:
+## 📦 Status
 
-| Field | Meaning | Default |
-|---|---|---|
-| `grid_w`, `grid_h` | Detection grid resolution | 128 × 72 |
-| `frame_w`, `frame_h` | Must match your video's resolution | 1920 × 1080 |
-| `model_path` | YOLO weights file | `yolov8n.pt` |
-| `conf_threshold` | Minimum detection confidence | 0.2 |
-| `target_class` | COCO class ID to track | 0 (person) |
-| `infer_every_n_frames` | Run inference every Nth frame (perf knob) | 10 |
-| `point_mode` | `"center"` or `"bottom_center"` of the box | `center` |
-| `save_every_seconds` | How often to flush data to disk | 900 (synced to the 15-min bucket) |
-
-## Project structure
-
-```
-people-traffic-heatmap/
-├── heatmap_engine.py   # detection, storage cube, rendering — no GUI deps
-├── gui_app.py          # PyQt5 dark/neon desktop app
-├── requirements.txt
-├── LICENSE
-└── README.md
-```
-
-At runtime the app also creates (git-ignored):
-
-```
-heatmap_data/<camera_id>/
-├── background.jpg      # first frame of the source, used as the overlay base
-└── YYYY-MM-DD.npy       # one detection-count cube per day
-```
-
-## Notes
-
-- No sample video is bundled — point the app at any video with people
-  walking through frame, or an RTSP camera.
-- This project is for portfolio/demonstration purposes.
+This repository currently showcases the finished tool through the
+screenshots, demo video, and walkthrough above. I'm still deciding on the
+right way to share the implementation publicly — the source code will be
+added here (or linked from here) once that's settled. ⭐ Star / watch this
+repo if you'd like to be notified.
 
 ## License
 

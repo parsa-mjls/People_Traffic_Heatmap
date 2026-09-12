@@ -80,8 +80,6 @@ window.)*
   </tr>
 </table>
 
-*(Screenshots to be added — drop your own images into `docs/screenshots/`
-using the file names above and they'll show up here.)*
 
 ## 🚀 How it's used
 
